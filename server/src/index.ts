@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes";
 import noteRoutes from "./routes/note.routes";
+import aiRoutes from "./routes/ai.routes";
 
 
 
@@ -24,6 +25,7 @@ app.get("/", (req, res) => {
 // ✅ REGISTER ROUTES FIRST
 app.use("/auth", authRoutes);
 app.use("/notes", noteRoutes);
+app.use("/ai", aiRoutes);
 
 // ✅ THEN START SERVER
 app.listen(5000, () => {
