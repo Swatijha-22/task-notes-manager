@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { getNotes, createNote, deleteNote, updateNote } from "../api/api";
+import { getNotes, createNote, deleteNote, updateNote, summarizeNote } from "../api/api";
+import AiPanel from "../components/AiPanel";
 
 function NotesPage({ onLogout }: { onLogout: () => void }) {
   const [notes, setNotes] = useState<any[]>([]);
@@ -7,6 +8,9 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
   const [content, setContent] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+
+  // AI state per note  { [noteId]: { loading, summary } }
+  const [summaries, setSummaries] = useState<Record<string, { loading: boolean; text: string }>>({});
 
   const token = localStorage.getItem("token") || "";
 
@@ -26,6 +30,7 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
 
   const handleDelete = async (id: string) => {
     await deleteNote(token, id);
+    setSummaries((prev) => { const next = { ...prev }; delete next[id]; return next; });
     fetchNotes();
   };
 
@@ -40,6 +45,17 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
     await updateNote(token, editId, title, content);
     setEditId(null); setTitle(""); setContent("");
     fetchNotes();
+  };
+
+  const handleSummarize = async (note: any) => {
+    const id = note._id;
+    setSummaries((prev) => ({ ...prev, [id]: { loading: true, text: "" } }));
+    try {
+      const data = await summarizeNote(token, note.content);
+      setSummaries((prev) => ({ ...prev, [id]: { loading: false, text: data.summary || data.message || "No summary returned." } }));
+    } catch {
+      setSummaries((prev) => ({ ...prev, [id]: { loading: false, text: "Failed to summarize." } }));
+    }
   };
 
   const filteredNotes = notes.filter(n =>
@@ -105,8 +121,10 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
         {/* Search */}
         <input placeholder="🔍 Search notes..."
           value={search} onChange={(e) => setSearch(e.target.value)}
-          style={{ ...inputStyle, marginBottom: "24px", background: "white",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }} />
+          style={{
+            ...inputStyle, marginBottom: "24px", background: "white",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
+          }} />
 
         {/* Notes count */}
         <p style={{ color: "#888", fontSize: "14px", marginBottom: "16px" }}>
@@ -115,31 +133,59 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
 
         {/* Notes Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "20px" }}>
-          {filteredNotes.map((note) => (
-            <div key={note._id} style={{
-              background: "white", borderRadius: "12px", padding: "20px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              borderTop: "4px solid #667eea"
-            }}>
-              <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "#1a1a2e" }}>{note.title}</h3>
-              <p style={{ margin: "0 0 16px 0", color: "#555", fontSize: "14px", lineHeight: "1.6" }}>{note.content}</p>
-              <p style={{ margin: "0 0 16px 0", color: "#aaa", fontSize: "12px" }}>
-                🕒 {new Date(note.createdAt).toLocaleDateString("en-IN", {
-                  day: "numeric", month: "short", year: "numeric"
-                })}
-              </p>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button onClick={() => handleEdit(note)} style={{
-                  padding: "7px 16px", borderRadius: "6px", border: "1px solid #667eea",
-                  background: "white", color: "#667eea", cursor: "pointer", fontSize: "13px"
-                }}>Edit</button>
-                <button onClick={() => handleDelete(note._id)} style={{
-                  padding: "7px 16px", borderRadius: "6px", border: "1px solid #fc8181",
-                  background: "white", color: "#fc8181", cursor: "pointer", fontSize: "13px"
-                }}>Delete</button>
+          {filteredNotes.map((note) => {
+            const s = summaries[note._id];
+            return (
+              <div key={note._id} style={{
+                background: "white", borderRadius: "12px", padding: "20px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                borderTop: "4px solid #667eea"
+              }}>
+                <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "#1a1a2e" }}>{note.title}</h3>
+                <p style={{ margin: "0 0 16px 0", color: "#555", fontSize: "14px", lineHeight: "1.6" }}>{note.content}</p>
+                <p style={{ margin: "0 0 16px 0", color: "#aaa", fontSize: "12px" }}>
+                  🕒 {new Date(note.createdAt).toLocaleDateString("en-IN", {
+                    day: "numeric", month: "short", year: "numeric"
+                  })}
+                </p>
+
+                {/* AI Summary area */}
+                {s && (
+                  <div style={{
+                    marginBottom: "14px", padding: "10px 12px",
+                    background: "linear-gradient(135deg, #f0f2ff 0%, #faf0ff 100%)",
+                    borderRadius: "8px", borderLeft: "3px solid #764ba2",
+                  }}>
+                    {s.loading ? (
+                      <p style={{ margin: 0, color: "#764ba2", fontSize: "13px" }}>✨ Summarizing…</p>
+                    ) : (
+                      <p style={{ margin: 0, color: "#4a4a6a", fontSize: "13px", whiteSpace: "pre-wrap", lineHeight: "1.55" }}>
+                        {s.text}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <button onClick={() => handleEdit(note)} style={{
+                    padding: "7px 16px", borderRadius: "6px", border: "1px solid #667eea",
+                    background: "white", color: "#667eea", cursor: "pointer", fontSize: "13px"
+                  }}>Edit</button>
+                  <button onClick={() => handleDelete(note._id)} style={{
+                    padding: "7px 16px", borderRadius: "6px", border: "1px solid #fc8181",
+                    background: "white", color: "#fc8181", cursor: "pointer", fontSize: "13px"
+                  }}>Delete</button>
+                  <button onClick={() => handleSummarize(note)} disabled={s?.loading} style={{
+                    padding: "7px 16px", borderRadius: "6px", border: "1px solid #764ba2",
+                    background: s?.loading ? "#f0f2ff" : "white",
+                    color: "#764ba2", cursor: s?.loading ? "not-allowed" : "pointer", fontSize: "13px",
+                  }}>
+                    {s?.loading ? "…" : "✨ Summarize"}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {filteredNotes.length === 0 && (
@@ -149,6 +195,9 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
       </div>
+
+      {/* Floating AI Chat Panel */}
+      <AiPanel notes={notes} token={token} />
     </div>
   );
 }

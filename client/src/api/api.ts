@@ -56,3 +56,31 @@ export const updateNote = async (token: string, id: string, title: string, conte
   });
   return res.json();
 };
+
+export const summarizeNote = async (token: string, content: string) => {
+  const res = await fetch(`${BASE_URL}/ai/summarize`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ content }),
+  });
+  return res.json();
+};
+
+export const chatWithAI = async (
+  token: string,
+  message: string,
+  notes: { title: string; content: string }[]
+) => {
+  const res = await fetch(`${BASE_URL}/ai/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ message, notes }),
+  });
+  return res.json();
+};
