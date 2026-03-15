@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { User } from "../models/user.model";
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "supersecretkey123";
+const SECRET = process.env.JWT_SECRET || "mysecretkey";
 
 export async function signup(email: string, password: string) {
   const existing = await User.findOne({ email });

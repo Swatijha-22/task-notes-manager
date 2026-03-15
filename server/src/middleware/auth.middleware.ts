@@ -20,12 +20,8 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
 
   try {
     const SECRET = process.env.JWT_SECRET || "mysecretkey";  // moved here!
-
-    console.log("SECRET used to verify:", SECRET);  // add this
-    console.log("Token received:", token);
-
     const decoded = jwt.verify(token, SECRET);
-    console.log("Decoded:", decoded);  // add this line
+    // console.log("Decoded:", decoded);  // add this line
 
     req.user = decoded;
     next();
