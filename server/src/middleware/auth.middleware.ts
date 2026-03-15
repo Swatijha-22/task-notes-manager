@@ -5,6 +5,15 @@ export interface AuthRequest extends Request {
   user?: any;
 }
 
+// ⚠️ CRITICAL: JWT_SECRET must be set in environment variables
+const SECRET: string = process.env.JWT_SECRET || "";
+
+if (!SECRET) {
+  throw new Error(
+    "❌ CRITICAL: JWT_SECRET environment variable is not set. Please set it in your .env file.",
+  );
+}
+
 export function authenticate(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
@@ -19,14 +28,11 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   }
 
   try {
-    const SECRET = process.env.JWT_SECRET || "mysecretkey";  // moved here!
     const decoded = jwt.verify(token, SECRET);
-    // console.log("Decoded:", decoded);  // add this line
-
     req.user = decoded;
     next();
-  }  catch (error: any) {
-    console.log("JWT Error:", error.name, error.message);
-    return res.status(401).json({ message: error.message });
-}
+  } catch (error: any) {
+    console.error("🔐 JWT Verification Error:", error.name, error.message);
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
 }

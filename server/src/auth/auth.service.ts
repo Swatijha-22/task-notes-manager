@@ -4,7 +4,15 @@ import { RefreshToken } from "../models/refreshToken.model";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
-const SECRET = process.env.JWT_SECRET || "mysecretkey";
+// ⚠️ CRITICAL: JWT_SECRET must be set in environment variables
+// Generate a secure secret using: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+const SECRET: string = process.env.JWT_SECRET || "";
+
+if (!SECRET) {
+  throw new Error(
+    "❌ CRITICAL: JWT_SECRET environment variable is not set. Please set it in your .env file.",
+  );
+}
 
 export async function signup(email: string, password: string) {
   const existing = await User.findOne({ email });

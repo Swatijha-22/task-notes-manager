@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
 import { signup, login, refreshAccessToken, logout } from "./auth.service";
 import { AuthRequest } from "../middleware/auth.middleware";
+import { signupSchema, loginSchema, refreshTokenSchema } from "./auth.schema";
+import { z } from "zod";
 
 export const signupUser = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const validated = signupSchema.parse(req.body);
+    const { email, password } = validated;
 
     const user = await signup(email, password);
 
@@ -13,13 +16,18 @@ export const signupUser = async (req: Request, res: Response) => {
       user: { email: user.email },
     });
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      const messages = error.issues.map((e: any) => `${e.path.join(".")}: ${e.message}`).join(", ");
+      return res.status(400).json({ message: messages });
+    }
     res.status(400).json({ message: error.message });
   }
 };
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const validated = loginSchema.parse(req.body);
+    const { email, password } = validated;
 
     const { accessToken, refreshToken } = await login(email, password);
 
@@ -29,17 +37,18 @@ export const loginUser = async (req: Request, res: Response) => {
       refreshToken,
     });
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      const messages = error.issues.map((e: any) => `${e.path.join(".")}: ${e.message}`).join(", ");
+      return res.status(400).json({ message: messages });
+    }
     res.status(401).json({ message: error.message });
   }
 };
 
 export const refreshToken = async (req: Request, res: Response) => {
   try {
-    const { refreshToken: token } = req.body;
-
-    if (!token) {
-      return res.status(400).json({ message: "Refresh token required" });
-    }
+    const validated = refreshTokenSchema.parse(req.body);
+    const token = validated.refreshToken;
 
     const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(token);
 
@@ -49,17 +58,18 @@ export const refreshToken = async (req: Request, res: Response) => {
       refreshToken: newRefreshToken,
     });
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      const messages = error.issues.map((e: any) => `${e.path.join(".")}: ${e.message}`).join(", ");
+      return res.status(400).json({ message: messages });
+    }
     res.status(401).json({ message: error.message });
   }
 };
 
 export const logoutUser = async (req: AuthRequest, res: Response) => {
   try {
-    const { refreshToken: token } = req.body;
-
-    if (!token) {
-      return res.status(400).json({ message: "Refresh token required" });
-    }
+    const validated = refreshTokenSchema.parse(req.body);
+    const token = validated.refreshToken;
 
     await logout(token);
 
@@ -67,6 +77,10 @@ export const logoutUser = async (req: AuthRequest, res: Response) => {
       message: "Logout successful",
     });
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      const messages = error.issues.map((e: any) => `${e.path.join(".")}: ${e.message}`).join(", ");
+      return res.status(400).json({ message: messages });
+    }
     res.status(400).json({ message: error.message });
   }
 };
