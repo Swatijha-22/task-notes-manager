@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { login } from "../api/api";
+import { login, setTokens } from "../api/api";
 
 function LoginPage({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState("");
@@ -11,8 +11,8 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
     setLoading(true);
     const data = await login(email, password);
     setLoading(false);
-    if (data.token) {
-      localStorage.setItem("token", data.token);
+    if (data.accessToken && data.refreshToken) {
+      setTokens(data.accessToken, data.refreshToken);
       onLogin();
     } else {
       setError(data.message || "Login failed");

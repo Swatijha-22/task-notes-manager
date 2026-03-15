@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getNotes, createNote, deleteNote, updateNote, summarizeNote } from "../api/api";
+import { getNotes, createNote, deleteNote, updateNote, summarizeNote, logout } from "../api/api";
 import AiPanel from "../components/AiPanel";
 
 function NotesPage({ onLogout }: { onLogout: () => void }) {
@@ -12,10 +12,8 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
   // AI state per note  { [noteId]: { loading, summary } }
   const [summaries, setSummaries] = useState<Record<string, { loading: boolean; text: string }>>({});
 
-  const token = localStorage.getItem("token") || "";
-
   const fetchNotes = async () => {
-    const data = await getNotes(token);
+    const data = await getNotes();
     setNotes(data.notes || []);
   };
 
@@ -23,13 +21,13 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
 
   const handleCreate = async () => {
     if (!title || !content) return;
-    await createNote(token, title, content);
+    await createNote(title, content);
     setTitle(""); setContent("");
     fetchNotes();
   };
 
   const handleDelete = async (id: string) => {
-    await deleteNote(token, id);
+    await deleteNote(id);
     setSummaries((prev) => { const next = { ...prev }; delete next[id]; return next; });
     fetchNotes();
   };
@@ -42,7 +40,7 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
 
   const handleUpdate = async () => {
     if (!editId) return;
-    await updateNote(token, editId, title, content);
+    await updateNote(editId, title, content);
     setEditId(null); setTitle(""); setContent("");
     fetchNotes();
   };
@@ -51,11 +49,16 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
     const id = note._id;
     setSummaries((prev) => ({ ...prev, [id]: { loading: true, text: "" } }));
     try {
-      const data = await summarizeNote(token, note.content);
+      const data = await summarizeNote(note.content);
       setSummaries((prev) => ({ ...prev, [id]: { loading: false, text: data.summary || data.message || "No summary returned." } }));
     } catch {
       setSummaries((prev) => ({ ...prev, [id]: { loading: false, text: "Failed to summarize." } }));
     }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    onLogout();
   };
 
   const filteredNotes = notes.filter(n =>
@@ -81,7 +84,7 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
         <h1 style={{ margin: 0, fontSize: "22px", color: "#1a1a2e", fontWeight: "700" }}>
           📝 NoteApp
         </h1>
-        <button onClick={onLogout} style={{
+        <button onClick={handleLogout} style={{
           padding: "8px 20px", borderRadius: "8px", border: "1px solid #e2e8f0",
           background: "white", cursor: "pointer", color: "#666", fontSize: "14px"
         }}>Logout</button>
@@ -197,7 +200,7 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
       </div>
 
       {/* Floating AI Chat Panel */}
-      <AiPanel notes={notes} token={token} />
+      <AiPanel notes={notes} />
     </div>
   );
 }

@@ -8,10 +8,9 @@ interface Message {
 
 interface AiPanelProps {
     notes: { title: string; content: string }[];
-    token: string;
 }
 
-export default function AiPanel({ notes, token }: AiPanelProps) {
+export default function AiPanel({ notes }: AiPanelProps) {
     const [open, setOpen] = useState(false);
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
@@ -31,7 +30,7 @@ export default function AiPanel({ notes, token }: AiPanelProps) {
         setMessages((prev) => [...prev, { role: "user", text: msg }]);
         setLoading(true);
         try {
-            const data = await chatWithAI(token, msg, notes);
+            const data = await chatWithAI(msg, notes);
             setMessages((prev) => [...prev, { role: "ai", text: data.reply || data.message || "Sorry, I couldn't process that." }]);
         } catch {
             setMessages((prev) => [...prev, { role: "ai", text: "Something went wrong. Please try again." }]);
