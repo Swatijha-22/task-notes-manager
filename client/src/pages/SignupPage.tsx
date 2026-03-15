@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signup } from "../api/api";
+import { signup, setTokens } from "../api/api";
 
 function SignupPage({ onSignup }: { onSignup: () => void }) {
   const [email, setEmail] = useState("");
@@ -8,99 +8,111 @@ function SignupPage({ onSignup }: { onSignup: () => void }) {
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
     setLoading(true);
-    const data = await signup(email, password);
-    setLoading(false);
-    if (data.user) {
-      onSignup();
-    } else {
-      setError(data.message || "Signup failed");
+    setError("");
+
+    try {
+      const data = await signup(email, password);
+      if (data.accessToken && data.refreshToken) {
+        setTokens(data.accessToken, data.refreshToken);
+        onSignup();
+      } else {
+        setError(data.message || "Signup failed");
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred during signup");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const inputStyle = {
-    width: "100%", padding: "14px 16px", borderRadius: "10px",
-    border: "1.5px solid #e2e8f0", fontSize: "15px",
-    marginBottom: "16px", boxSizing: "border-box" as const,
-    outline: "none", fontFamily: "inherit", color: "#1a1a2e",
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !loading) handleSignup();
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: "Inter, -apple-system, sans-serif",
-      padding: "24px",
-    }}>
-      <div style={{
-        display: "flex", width: "100%", maxWidth: "900px",
-        borderRadius: "24px", overflow: "hidden",
-        boxShadow: "0 30px 80px rgba(0,0,0,0.3)",
-      }}>
-        {/* Left side — branding */}
-        <div style={{
-          flex: 1, background: "rgba(255,255,255,0.1)",
-          backdropFilter: "blur(10px)", padding: "60px 48px",
-          display: "flex", flexDirection: "column", justifyContent: "center",
-          color: "white",
-        }}>
-          <div style={{ fontSize: "48px", marginBottom: "16px" }}>🚀</div>
-          <h1 style={{ fontSize: "32px", fontWeight: "800", margin: "0 0 16px 0" }}>
-            Join NoteApp
-          </h1>
-          <p style={{ fontSize: "16px", opacity: 0.85, lineHeight: "1.7", margin: 0 }}>
-            Create your free account and start organizing your thoughts in seconds.
-          </p>
-          <div style={{ marginTop: "48px" }}>
-            {["🆓 Free forever", "🔒 Your data is safe", "⚡ Get started in seconds"].map(f => (
-              <p key={f} style={{ margin: "8px 0", opacity: 0.8, fontSize: "14px" }}>{f}</p>
-            ))}
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center p-4">
+      <div className="w-full max-w-md animate-slide-up">
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-3">🚀</div>
+            <h1 className="text-3xl font-bold text-gray-900">Join NoteApp</h1>
+            <p className="text-gray-600 mt-2 text-sm">Create your account in seconds</p>
           </div>
-        </div>
 
-        {/* Right side — form */}
-        <div style={{
-          flex: 1, background: "white", padding: "60px 48px",
-          display: "flex", flexDirection: "column", justifyContent: "center",
-        }}>
-          <h2 style={{ margin: "0 0 8px 0", fontSize: "26px", color: "#1a1a2e", fontWeight: "700" }}>
-            Create account 🎉
-          </h2>
-          <p style={{ margin: "0 0 36px 0", color: "#888", fontSize: "15px" }}>
-            It's free and takes less than a minute
-          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                onKeyPress={handleKeyPress}
+                disabled={loading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition"
+              />
+            </div>
 
-          <label style={{ fontSize: "13px", fontWeight: "600", color: "#555", marginBottom: "6px", display: "block" }}>
-            Email address
-          </label>
-          <input placeholder="you@example.com" value={email}
-            onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError("");
+                }}
+                onKeyPress={handleKeyPress}
+                disabled={loading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition"
+              />
+              <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+            </div>
 
-          <label style={{ fontSize: "13px", fontWeight: "600", color: "#555", marginBottom: "6px", display: "block" }}>
-            Password
-          </label>
-          <input placeholder="••••••••" type="password" value={password}
-            onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm animate-fade-in">
+                {error}
+              </div>
+            )}
 
-          <button onClick={handleSignup} disabled={loading} style={{
-            width: "100%", padding: "14px", borderRadius: "10px", border: "none",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white", fontSize: "16px", fontWeight: "700",
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.7 : 1, marginTop: "8px",
-            boxShadow: "0 4px 15px rgba(102,126,234,0.4)",
-          }}>
-            {loading ? "Creating account..." : "Create Account →"}
-          </button>
+            <button
+              onClick={handleSignup}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 rounded-lg hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-70 disabled:cursor-not-allowed transition duration-200 mt-6"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span>
+                  Creating account...
+                </span>
+              ) : (
+                "Create account →"
+              )}
+            </button>
+          </div>
 
-          {error && (
-            <div style={{
-              marginTop: "16px", padding: "12px 16px", borderRadius: "8px",
-              background: "#fff5f5", border: "1px solid #fc8181",
-              color: "#e53e3e", fontSize: "14px"
-            }}>{error}</div>
-          )}
+          <div className="mt-6 text-center text-sm text-gray-600">
+            <p>🆓 Free forever • 🔒 Secure • ⚡ Instant setup</p>
+          </div>
         </div>
       </div>
     </div>

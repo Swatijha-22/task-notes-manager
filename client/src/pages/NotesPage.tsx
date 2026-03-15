@@ -66,138 +66,146 @@ function NotesPage({ onLogout }: { onLogout: () => void }) {
     n.content.toLowerCase().includes(search.toLowerCase())
   );
 
-  const inputStyle = {
-    width: "100%", padding: "12px 16px", borderRadius: "8px",
-    border: "1px solid #e2e8f0", fontSize: "15px",
-    marginBottom: "12px", boxSizing: "border-box" as const,
-    outline: "none", fontFamily: "inherit",
-  };
-
   return (
-    <div style={{ minHeight: "100vh", background: "#f7f8fc", fontFamily: "Inter, sans-serif" }}>
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div style={{
-        background: "white", padding: "16px 32px",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-        display: "flex", justifyContent: "space-between", alignItems: "center"
-      }}>
-        <h1 style={{ margin: 0, fontSize: "22px", color: "#1a1a2e", fontWeight: "700" }}>
-          📝 NoteApp
-        </h1>
-        <button onClick={handleLogout} style={{
-          padding: "8px 20px", borderRadius: "8px", border: "1px solid #e2e8f0",
-          background: "white", cursor: "pointer", color: "#666", fontSize: "14px"
-        }}>Logout</button>
-      </div>
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">📝 NoteApp</h1>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          >
+            Logout
+          </button>
+        </div>
+      </header>
 
-      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "32px 24px" }}>
+      <main className="max-w-6xl mx-auto px-6 py-8">
         {/* Create/Edit Box */}
-        <div style={{
-          background: "white", borderRadius: "12px", padding: "24px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.06)", marginBottom: "32px"
-        }}>
-          <h2 style={{ margin: "0 0 20px 0", fontSize: "18px", color: "#1a1a2e" }}>
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">
             {editId ? "✏️ Edit Note" : "➕ New Note"}
           </h2>
-          <input placeholder="Title" value={title}
-            onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
-          <textarea placeholder="Write your note here..."
-            value={content} onChange={(e) => setContent(e.target.value)}
-            style={{ ...inputStyle, minHeight: "100px", resize: "vertical" }} />
-          <button onClick={editId ? handleUpdate : handleCreate} style={{
-            padding: "11px 28px", borderRadius: "8px", border: "none",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white", fontSize: "15px", fontWeight: "600", cursor: "pointer"
-          }}>
-            {editId ? "Update Note" : "Add Note"}
-          </button>
-          {editId && (
-            <button onClick={() => { setEditId(null); setTitle(""); setContent(""); }}
-              style={{
-                marginLeft: "12px", padding: "11px 20px", borderRadius: "8px",
-                border: "1px solid #e2e8f0", background: "white",
-                cursor: "pointer", fontSize: "15px", color: "#666"
-              }}>Cancel</button>
-          )}
+          <input
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+          />
+          <textarea
+            placeholder="Write your note here..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 min-h-24 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition resize-vertical"
+          />
+          <div className="flex gap-3">
+            <button
+              onClick={editId ? handleUpdate : handleCreate}
+              className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg transition"
+            >
+              {editId ? "Update Note" : "Add Note"}
+            </button>
+            {editId && (
+              <button
+                onClick={() => {
+                  setEditId(null);
+                  setTitle("");
+                  setContent("");
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search */}
-        <input placeholder="🔍 Search notes..."
-          value={search} onChange={(e) => setSearch(e.target.value)}
-          style={{
-            ...inputStyle, marginBottom: "24px", background: "white",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
-          }} />
+        <input
+          placeholder="🔍 Search notes..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+        />
 
         {/* Notes count */}
-        <p style={{ color: "#888", fontSize: "14px", marginBottom: "16px" }}>
+        <p className="text-gray-600 text-sm mb-6">
           {filteredNotes.length} note{filteredNotes.length !== 1 ? "s" : ""}
         </p>
 
         {/* Notes Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "20px" }}>
-          {filteredNotes.map((note) => {
-            const s = summaries[note._id];
-            return (
-              <div key={note._id} style={{
-                background: "white", borderRadius: "12px", padding: "20px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                borderTop: "4px solid #667eea"
-              }}>
-                <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "#1a1a2e" }}>{note.title}</h3>
-                <p style={{ margin: "0 0 16px 0", color: "#555", fontSize: "14px", lineHeight: "1.6" }}>{note.content}</p>
-                <p style={{ margin: "0 0 16px 0", color: "#aaa", fontSize: "12px" }}>
-                  🕒 {new Date(note.createdAt).toLocaleDateString("en-IN", {
-                    day: "numeric", month: "short", year: "numeric"
-                  })}
-                </p>
+        {filteredNotes.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredNotes.map((note) => {
+              const s = summaries[note._id];
+              return (
+                <div
+                  key={note._id}
+                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition border-t-4 border-purple-600 p-6"
+                >
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">{note.title}</h3>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">{note.content}</p>
+                  <p className="text-gray-400 text-xs mb-4">
+                    🕒{" "}
+                    {new Date(note.createdAt).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </p>
 
-                {/* AI Summary area */}
-                {s && (
-                  <div style={{
-                    marginBottom: "14px", padding: "10px 12px",
-                    background: "linear-gradient(135deg, #f0f2ff 0%, #faf0ff 100%)",
-                    borderRadius: "8px", borderLeft: "3px solid #764ba2",
-                  }}>
-                    {s.loading ? (
-                      <p style={{ margin: 0, color: "#764ba2", fontSize: "13px" }}>✨ Summarizing…</p>
-                    ) : (
-                      <p style={{ margin: 0, color: "#4a4a6a", fontSize: "13px", whiteSpace: "pre-wrap", lineHeight: "1.55" }}>
-                        {s.text}
-                      </p>
-                    )}
+                  {/* AI Summary area */}
+                  {s && (
+                    <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border-l-4 border-purple-600 rounded-lg">
+                      {s.loading ? (
+                        <p className="m-0 text-purple-700 text-sm font-medium">✨ Summarizing…</p>
+                      ) : (
+                        <p className="m-0 text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">
+                          {s.text}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => handleEdit(note)}
+                      className="px-3 py-2 text-sm font-medium text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 transition"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(note._id)}
+                      className="px-3 py-2 text-sm font-medium text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={() => handleSummarize(note)}
+                      disabled={s?.loading}
+                      className={`px-3 py-2 text-sm font-medium rounded-lg transition ${
+                        s?.loading
+                          ? "text-gray-400 border border-gray-200 bg-gray-50 cursor-not-allowed"
+                          : "text-purple-600 border border-purple-300 hover:bg-purple-50"
+                      }`}
+                    >
+                      {s?.loading ? "…" : "✨ Summarize"}
+                    </button>
                   </div>
-                )}
-
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  <button onClick={() => handleEdit(note)} style={{
-                    padding: "7px 16px", borderRadius: "6px", border: "1px solid #667eea",
-                    background: "white", color: "#667eea", cursor: "pointer", fontSize: "13px"
-                  }}>Edit</button>
-                  <button onClick={() => handleDelete(note._id)} style={{
-                    padding: "7px 16px", borderRadius: "6px", border: "1px solid #fc8181",
-                    background: "white", color: "#fc8181", cursor: "pointer", fontSize: "13px"
-                  }}>Delete</button>
-                  <button onClick={() => handleSummarize(note)} disabled={s?.loading} style={{
-                    padding: "7px 16px", borderRadius: "6px", border: "1px solid #764ba2",
-                    background: s?.loading ? "#f0f2ff" : "white",
-                    color: "#764ba2", cursor: s?.loading ? "not-allowed" : "pointer", fontSize: "13px",
-                  }}>
-                    {s?.loading ? "…" : "✨ Summarize"}
-                  </button>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {filteredNotes.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px", color: "#aaa" }}>
-            <p style={{ fontSize: "48px" }}>📭</p>
-            <p>{search ? "No notes match your search" : "No notes yet. Create your first note!"}</p>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-5xl mb-4">📭</p>
+            <p className="text-gray-500 font-medium">
+              {search ? "No notes match your search" : "No notes yet. Create your first note!"}
+            </p>
           </div>
         )}
-      </div>
+      </main>
 
       {/* Floating AI Chat Panel */}
       <AiPanel notes={notes} />
